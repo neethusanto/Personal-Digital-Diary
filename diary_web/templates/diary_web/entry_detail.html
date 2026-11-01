@@ -1,0 +1,129 @@
+{% extends 'diary_web/base.html' %}
+
+{% block title %}{{ entry.title }} - Personal Digital Diary{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-xl-9">
+
+        <!-- Top Navigation / Action Bar -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <a href="{% url 'diary:entry_list' %}" class="btn btn-light border rounded-pill px-4 shadow-sm text-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Timeline
+            </a>
+            
+            <div class="d-flex align-items-center gap-2">
+                <a href="{% url 'diary:entry_export' entry.entry_id %}" class="btn btn-outline-primary rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-1" title="Download formatted plain-text">
+                    <i class="bi bi-file-earmark-arrow-down"></i>
+                    <span>Export .TXT</span>
+                </a>
+                <a href="{% url 'diary:entry_edit' entry.entry_id %}" class="btn btn-warning rounded-pill px-4 shadow-sm fw-semibold text-dark d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-pencil-square"></i>
+                    <span>Edit</span>
+                </a>
+                <button 
+                    type="button" 
+                    class="btn btn-outline-danger rounded-pill px-3 shadow-sm btn-delete-entry"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#deleteModal"
+                    data-id="{{ entry.entry_id }}"
+                    data-title="{{ entry.title }}"
+                    data-url="{% url 'diary:entry_delete' entry.entry_id %}"
+                    title="Delete Entry"
+                >
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Journal Editorial Canvas -->
+        <article class="journal-canvas-card">
+            <!-- Header Ribbon -->
+            <div class="journal-ribbon-header">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                    <span class="date-badge fs-6 px-3 py-2">
+                        <i class="bi bi-calendar-check-fill text-primary"></i>
+                        {{ entry.entry_date|date:"l, F d, Y" }}
+                    </span>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 small" id="detailWordStat">
+                            <i class="bi bi-pen me-1"></i> <span id="readingTimeCalc">1 min read</span>
+                        </span>
+                        <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-3 py-2 small font-monospace">
+                            #{{ entry.entry_id }}
+                        </span>
+                    </div>
+                </div>
+
+                <h1 class="journal-full-title mb-2">
+                    {{ entry.title }}
+                </h1>
+            </div>
+
+            <!-- Reading Body with Journal Lines & Drop Cap -->
+            <div class="journal-paper-lines">
+                <div class="journal-editorial-body" id="journalContentBody">
+                    {{ entry.content|linebreaks }}
+                </div>
+            </div>
+
+            <!-- Footer Metadata & Local File Provenance -->
+            <div class="bg-light-subtle border-top px-4 px-md-5 py-3 d-flex flex-wrap justify-content-between align-items-center text-muted small">
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    <span>
+                        <i class="bi bi-clock-history me-1 text-primary"></i> Created: {{ entry.created_at|date:"Y-m-d h:i A" }}
+                    </span>
+                    {% if entry.updated_at != entry.created_at %}
+                        <span>&bull;</span>
+                        <span>
+                            <i class="bi bi-pencil-fill me-1 text-warning"></i> Modified: {{ entry.updated_at|date:"Y-m-d h:i A" }}
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="font-monospace mt-2 mt-md-0 d-inline-flex align-items-center gap-1 bg-white px-3 py-1 rounded-pill border">
+                    <i class="bi bi-filetype-json text-primary"></i>
+                    <span>data/entries/entry_{{ entry.entry_id }}.json</span>
+                </div>
+            </div>
+        </article>
+
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg overflow-hidden">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <div class="d-flex align-items-center gap-2 text-danger">
+                    <div class="p-2 bg-danger bg-opacity-10 rounded-circle">
+                        <i class="bi bi-trash3-fill fs-5"></i>
+                    </div>
+                    <h5 class="modal-title fw-bold" id="deleteModalLabel">Delete Journal Entry</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-secondary mb-2">Are you sure you want to delete this memory?</p>
+                <div class="p-3 bg-light rounded-3 border">
+                    <div class="fw-bold text-dark" id="modalEntryTitle">{{ entry.title }}</div>
+                </div>
+                <p class="text-muted small mt-3 mb-0">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> This permanently deletes the local file <code>entry_{{ entry.entry_id }}.json</code> from disk.
+                </p>
+            </div>
+            <div class="modal-footer border-0 pb-4 px-4 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" action="{% url 'diary:entry_delete' entry.entry_id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-trash-fill me-1"></i> Delete Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
